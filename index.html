@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>مدیریت محصولات</title>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Vazirmatn', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #f8fafc;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* دکمه‌های وسط صفحه */
+    .main-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    .cat-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      color: #fff;
+      font-size: 1.4rem;
+      font-weight: bold;
+      padding: 40px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .cat-btn:active {
+      transform: scale(0.95);
+      background: rgba(59, 130, 246, 0.3);
+      border-color: #3b82f6;
+    }
+
+    /* پس‌زمینه پاپ‌آپ */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(5px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    /* باکس پاپ‌آپ 95 درصد صفحه */
+    .modal-box {
+      width: 95vw;
+      height: 95vh;
+      background: #1e293b;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      animation: popIn 0.25s ease-out;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* هدر پاپ‌آپ */
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      background: #0f172a;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #38bdf8;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn-add {
+      background: #10b981;
+      color: white;
+      border: none;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      font-size: 1.8rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-close {
+      background: #ef4444;
+      color: white;
+      border: none;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* محتوای پاپ‌آپ */
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    /* فرم افزودن / ویرایش محصول */
+    .product-form {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      background: #0f172a;
+      padding: 18px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      border: 1px solid #334155;
+    }
+
+    .product-form.active {
+      display: flex;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+    }
+
+    .form-group input, .form-group textarea {
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #fff;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .form-group input:focus, .form-group textarea:focus {
+      border-color: #38bdf8;
+    }
+
+    .form-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .btn-submit {
+      flex: 2;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-cancel {
+      flex: 1;
+      background: #475569;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    /* لیست محصولات */
+    .product-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .product-card {
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card-top {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .card-main-img {
+      width: 75px;
+      height: 75px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: #334155;
+      flex-shrink: 0;
+    }
+
+    .card-info {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #f8fafc;
+      margin-bottom: 4px;
+    }
+
+    .card-price {
+      color: #10b981;
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+
+    .card-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.1rem;
+    }
+
+    .btn-edit {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+    }
+
+    .btn-delete {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+
+    .card-details {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 10px;
+      border-radius: 10px;
+      line-height: 1.6;
+    }
+
+    .extra-imgs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-top: 6px;
+    }
+
+    .extra-imgs img {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    .loading-text {
+      text-align: center;
+      color: #94a3b8;
+      padding: 30px;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 4 دکمه وسط صفحه -->
+  <div class="main-grid">
+    <button class="cat-btn" onclick="openCategory('channel', 'کانال')">📢<span>کانال</span></button>
+    <button class="cat-btn" onclick="openCategory('group', 'گروه')">👥<span>گروه</span></button>
+    <button class="cat-btn" onclick="openCategory('page', 'پیج')">📱<span>پیج</span></button>
+    <button class="cat-btn" onclick="openCategory('market', 'بازار')">🛒<span>بازار</span></button>
+  </div>
+
+  <!-- پاپ‌آپ 95 درصدی -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">عنوان</div>
+        <div class="header-actions">
+          <button class="btn-add" onclick="toggleForm()" title="افزودن محصول">+</button>
+          <button class="btn-close" onclick="closeModal()" title="بستن">✕</button>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <!-- فرم ثبت و ویرایش محصول -->
+        <form class="product-form" id="productForm" onsubmit="handleFormSubmit(event)">
+          <input type="hidden" id="editProductId">
+          <input type="hidden" id="existingMainImg">
+          <input type="hidden" id="existingExtraImgs">
+
+          <div class="form-group">
+            <label>عکس اصلی (در حالت ویرایش اگر انتخاب نکنید عکس قبلی می‌ماند)</label>
+            <input type="file" id="mainImageInput" accept="image/*">
+          </div>
+
+          <div class="form-group">
+            <label>عکس‌های اضافی (می‌توانید چند عکس انتخاب کنید)</label>
+            <input type="file" id="extraImagesInput" accept="image/*" multiple>
+          </div>
+
+          <div class="form-group">
+            <label>نام محصول *</label>
+            <input type="text" id="prodName" required placeholder="مثال: کانال تلگرام 10 کا">
+          </div>
+
+          <div class="form-group">
+            <label>قیمت محصول *</label>
+            <input type="text" id="prodPrice" required placeholder="مثال: 2,500,000 تومان">
+          </div>
+
+          <div class="form-group">
+            <label>توضیحات اضافی</label>
+            <textarea id="prodDesc" rows="3" placeholder="توضیحات کامل محصول..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>شماره کارت محصول</label>
+            <input type="text" id="prodCardNum" placeholder="6037-xxxx-xxxx-xxxx" dir="ltr">
+          </div>
+
+          <div class="form-group">
+            <label>نام صاحب شماره کارت</label>
+            <input type="text" id="prodCardName" placeholder="نام و نام خانوادگی">
+          </div>
+
+          <div class="form-group">
+            <label>آیدی صاحب محصول</label>
+            <input type="text" id="prodOwnerId" placeholder="@username" dir="ltr">
+          </div>
+
+          <div class="form-buttons">
+            <button type="submit" class="btn-submit" id="submitBtn">ثبت محصول</button>
+            <button type="button" class="btn-cancel" onclick="closeForm()">انصراف</button>
+          </div>
+        </form>
+
+        <!-- لیست محصولات -->
+        <div id="productList" class="product-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentCategory = '';
+    let currentProducts = {};
+
+    // باز کردن پاپ‌آپ دسته‌بندی
+    function openCategory(catKey, catTitle) {
+      currentCategory = catKey;
+      document.getElementById('modalTitle').innerText = catTitle;
+      document.getElementById('modalOverlay').classList.add('active');
+      closeForm();
+      loadProducts();
+    }
+
+    // بستن پاپ‌آپ
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.remove('active');
+      closeForm();
+    }
+
+    // باز و بسته کردن فرم افزودن
+    function toggleForm() {
+      const form = document.getElementById('productForm');
+      if (form.classList.contains('active')) {
+        closeForm();
+      } else {
+        resetForm();
+        form.classList.add('active');
+      }
+    }
+
+    function closeForm() {
+      document.getElementById('productForm').classList.remove('active');
+      resetForm();
+    }
+
+    function resetForm() {
+      document.getElementById('productForm').reset();
+      document.getElementById('editProductId').value = '';
+      document.getElementById('existingMainImg').value = '';
+      document.getElementById('existingExtraImgs').value = '';
+      document.getElementById('submitBtn').innerText = 'ثبت محصول';
+    }
+
+    // تبدیل فایل عکس به Base64
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
+    }
+
+    // آپلود عکس از طریق واسط Vercel به imgbb
+    async function uploadImageToServer(file) {
+      const base64 = await fileToBase64(file);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64 })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'خطا در آپلود عکس');
+      return data.url;
+    }
+
+    // دریافت لیست محصولات از واسط Vercel
+    async function loadProducts() {
+      const listEl = document.getElementById('productList');
+      listEl.innerHTML = '<div class="loading-text">در حال بارگذاری محصولات...</div>';
+
+      try {
+        const res = await fetch(`/api/db?category=${currentCategory}`);
+        const data = await res.json();
+        currentProducts = data || {};
+        renderProducts();
+      } catch (err) {
+        listEl.innerHTML = '<div class="loading-text" style="color:#ef4444;">خطا در دریافت اطلاعات!</div>';
+      }
+    }
+
+    // نمایش محصولات در صفحه
+    function renderProducts() {
+      const listEl = document.getElementById('productList');
+      listEl.innerHTML = '';
+
+      const keys = Object.keys(currentProducts);
+      if (keys.length === 0) {
+        listEl.innerHTML = '<div class="loading-text">هنوز محصولی ثبت نشده است. برای افزودن روی + بزنید.</div>';
+        return;
+      }
+
+      // نمایش جدیدترین‌ها در بالا
+      keys.reverse().forEach(id => {
+        const item = currentProducts[id];
+        const extraImgsHtml = (item.extraImages && item.extraImages.length > 0)
+          ? `<div class="extra-imgs">${item.extraImages.map(url => `<img src="${url}" alt="عکس اضافی">`).join('')}</div>`
+          : '';
+
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.innerHTML = `
+          <div class="card-top">
+            <img src="${item.mainImage || 'https://via.placeholder.com/150?text=No+Image'}" class="card-main-img" alt="محصول">
+            <div class="card-info">
+              <div class="card-title">${item.name || ''}</div>
+              <div class="card-price">${item.price || ''}</div>
+            </div>
+            <div class="card-actions">
+              <button class="icon-btn btn-edit" onclick="editProduct('${id}')" title="ویرایش">✏️</button>
+              <button class="icon-btn btn-delete" onclick="deleteProduct('${id}')" title="حذف">🗑️</button>
+            </div>
+          </div>
+          <div class="card-details">
+            ${item.description ? `<div><strong>توضیحات:</strong> ${item.description}</div>` : ''}
+            ${item.cardNumber ? `<div><strong>شماره کارت:</strong> ${item.cardNumber} (${item.cardName || ''})</div>` : ''}
+            ${item.ownerId ? `<div><strong>آیدی فروشنده:</strong> <span dir="ltr">${item.ownerId}</span></div>` : ''}
+            ${extraImgsHtml}
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    // ثبت یا ویرایش محصول
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('submitBtn');
+      const editId = document.getElementById('editProductId').value;
+      const mainFile = document.getElementById('mainImageInput').files[0];
+      const extraFiles = document.getElementById('extraImagesInput').files;
+
+      if (!editId && !mainFile) {
+        alert('لطفاً عکس اصلی محصول را انتخاب کنید.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'در حال آپلود و ثبت...';
+
+      try {
+        // 1. مدیریت عکس اصلی
+        let mainImageUrl = document.getElementById('existingMainImg').value;
+        if (mainFile) {
+          mainImageUrl = await uploadImageToServer(mainFile);
+        }
+
+        // 2. مدیریت عکس‌های اضافی
+        let extraImagesUrls = [];
+        const existingExtras = document.getElementById('existingExtraImgs').value;
+        if (existingExtras) {
+          extraImagesUrls = JSON.parse(existingExtras);
+        }
+        if (extraFiles.length > 0) {
+          extraImagesUrls = []; // جایگزینی عکس‌های جدید در صورت انتخاب
+          for (let i = 0; i < extraFiles.length; i++) {
+            const url = await uploadImageToServer(extraFiles[i]);
+            extraImagesUrls.push(url);
+          }
+        }
+
+        // 3. آماده‌سازی آبجکت محصول
+        const productData = {
+          mainImage: mainImageUrl,
+          extraImages: extraImagesUrls,
+          name: document.getElementById('prodName').value,
+          price: document.getElementById('prodPrice').value,
+          description: document.getElementById('prodDesc').value,
+          cardNumber: document.getElementById('prodCardNum').value,
+          cardName: document.getElementById('prodCardName').value,
+          ownerId: document.getElementById('prodOwnerId').value,
+          updatedAt: Date.now()
+        };
+
+        // 4. ارسال به دیتابیس از طریق واسط Vercel
+        if (editId) {
+          await fetch(`/api/db?category=${currentCategory}&id=${editId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(productData)
+          });
+        } else {
+          await fetch(`/api/db?category=${currentCategory}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(productData)
+          });
+        }
+
+        closeForm();
+        await loadProducts();
+      } catch (err) {
+        alert('خطا در عملیات: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'ثبت محصول';
+      }
+    }
+
+    // پر کردن فرم برای ویرایش محصول
+    function editProduct(id) {
+      const item = currentProducts[id];
+      if (!item) return;
+
+      document.getElementById('editProductId').value = id;
+      document.getElementById('existingMainImg').value = item.mainImage || '';
+      document.getElementById('existingExtraImgs').value = JSON.stringify(item.extraImages || []);
+
+      document.getElementById('prodName').value = item.name || '';
+      document.getElementById('prodPrice').value = item.price || '';
+      document.getElementById('prodDesc').value = item.description || '';
+      document.getElementById('prodCardNum').value = item.cardNumber || '';
+      document.getElementById('prodCardName').value = item.cardName || '';
+      document.getElementById('prodOwnerId').value = item.ownerId || '';
+
+      document.getElementById('submitBtn').innerText = 'ذخیره تغییرات';
+      document.getElementById('productForm').classList.add('active');
+      document.querySelector('.modal-body').scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // حذف محصول
+    async function deleteProduct(id) {
+      if (!confirm('آیا از حذف این محصول مطمئن هستید؟')) return;
+
+      try {
+        await fetch(`/api/db?category=${currentCategory}&id=${id}`, {
+          method: 'DELETE'
+        });
+        await loadProducts();
+      } catch (err) {
+        alert('خطا در حذف محصول');
+      }
+    }
+  </script>
+</body>
+</html>
+ 
